@@ -16,12 +16,6 @@ def colidiu_com_chao():
     else:
         return True
 
-def obstaculos_aleatorios(posx):
-    tamanho = randint(100,300)
-    cano = Obstaculo(False,posx,tamanho)
-    cano_invertido = Obstaculo(True, posx, ALTURA - tamanho - 20)
-    return (cano,cano_invertido)
-
 # Configurações do jogo
 LARGURA = 430
 ALTURA = 800
@@ -29,7 +23,7 @@ FPS = 30
 VELOCIDADE = 10
 GRAVIDADE = 1
 LARGURA_OBSTACULO = 120
-ALTURA_OBSTACULO = 500
+ALTURA_OBSTACULO = 300  
 
 # Configurações de tela
 tela_jogo = pg.display.set_mode((LARGURA,ALTURA))
@@ -89,34 +83,42 @@ class Passaro(pg.sprite.Sprite):
         self.speed = -VELOCIDADE
 
 class Obstaculo(pg.sprite.Sprite):
-    def __init__(self,invertido,posX, tamanhoY):
+    def __init__(self,invertido):
         pg.sprite.Sprite.__init__(self)
 
+        self.altura_obstaculo = ALTURA_OBSTACULO
+        self.largura_obstaculo = LARGURA_OBSTACULO
+
         self.image = img_obstaculo
-        self.image = pg.transform.scale(self.image,(LARGURA_OBSTACULO,ALTURA_OBSTACULO))
-        self.rect = self.image.get_rect()
-        self.rect[0] = posX
+        self.image = pg.transform.scale(self.image,(self.largura_obstaculo,self.altura_obstaculo))
+        self.rect = self.image.get_rect() 
 
         if (invertido):
             self.image = pg.transform.flip(self.image,False,True)
-            self.rect[1] = -(self.rect[3] - tamanhoY)
+            self.rect[0] = LARGURA + self.largura_obstaculo
         else:
-            self.rect[1] = ALTURA - tamanhoY
-
-
+            self.rect[0] = LARGURA + self.largura_obstaculo
+            self.rect[1] = 395
 
     def update(self):
-        self.rect[0] -= VELOCIDADE 
+        def tamanho_aleatorio():
+            altura_aleatoria = randint(300,400)
+            return altura_aleatoria
+
+        self.rect[0] -= VELOCIDADE
+        if(self.rect[0] == -LARGURA):
+            self.altura_obstaculo = tamanho_aleatorio()
+            self.rect[0] = LARGURA
 
 sprites_passaro = pg.sprite.Group()
 passaro = Passaro()
 sprites_passaro.add(passaro)
 
 sprites_obstaculo = pg.sprite.Group()
-for i in range(2):
-    obstaculos = obstaculos_aleatorios(LARGURA * i + 600)
-    sprites_obstaculo.add(obstaculos[0])
-    sprites_obstaculo.add(obstaculos[1])
+obstaculo = Obstaculo(False)
+obstaculo_invertido = Obstaculo(True)
+sprites_obstaculo.add(obstaculo_invertido)
+sprites_obstaculo.add(obstaculo)
 
 sprites_chao = pg.sprite.Group()
 chao = Base(LARGURA*2, 105)
