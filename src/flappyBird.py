@@ -1,3 +1,4 @@
+from random import randint
 import pygame as pg
 import sys
 
@@ -15,12 +16,20 @@ def colidiu_com_chao():
     else:
         return True
 
+def obstaculos_aleatorios(posx):
+    tamanho = randint(100,300)
+    cano = Obstaculo(False,posx,tamanho)
+    cano_invertido = Obstaculo(True, posx, ALTURA - tamanho - 20)
+    return (cano,cano_invertido)
+
 # Configurações do jogo
 LARGURA = 430
 ALTURA = 800
 FPS = 30
 VELOCIDADE = 10
 GRAVIDADE = 1
+LARGURA_OBSTACULO = 120
+ALTURA_OBSTACULO = 500
 
 # Configurações de tela
 tela_jogo = pg.display.set_mode((LARGURA,ALTURA))
@@ -80,12 +89,21 @@ class Passaro(pg.sprite.Sprite):
         self.speed = -VELOCIDADE
 
 class Obstaculo(pg.sprite.Sprite):
-    def __init__(self):
+    def __init__(self,invertido,posX, tamanhoY):
         pg.sprite.Sprite.__init__(self)
 
         self.image = img_obstaculo
+        self.image = pg.transform.scale(self.image,(LARGURA_OBSTACULO,ALTURA_OBSTACULO))
         self.rect = self.image.get_rect()
-        self.rect[0] = 430
+        self.rect[0] = posX
+
+        if (invertido):
+            self.image = pg.transform.flip(self.image,False,True)
+            self.rect[1] = -(self.rect[3] - tamanhoY)
+        else:
+            self.rect[1] = ALTURA - tamanhoY
+
+
 
     def update(self):
         self.rect[0] -= VELOCIDADE 
@@ -95,14 +113,19 @@ passaro = Passaro()
 sprites_passaro.add(passaro)
 
 sprites_obstaculo = pg.sprite.Group()
-obstaculo = Obstaculo()
-sprites_obstaculo.add(obstaculo)
+for i in range(2):
+    obstaculos = obstaculos_aleatorios(LARGURA * i + 600)
+    sprites_obstaculo.add(obstaculos[0])
+    sprites_obstaculo.add(obstaculos[1])
 
 sprites_chao = pg.sprite.Group()
 chao = Base(LARGURA*2, 105)
 sprites_chao.add(chao)
 
 def loop_principal_jopo():
+    passaro.rect[0] = LARGURA / 2
+    passaro.rect[1] = ALTURA / 2
+    trigger = False
     while True:
         for evento in pg.event.get():
             if (evento.type == pg.QUIT):
@@ -111,17 +134,19 @@ def loop_principal_jopo():
             if evento.type == pg.KEYDOWN:
                 if evento.key == pg.K_SPACE:
                     passaro.voar()
+                    trigger = True
 
         relogio.tick(FPS)
         tela_jogo.blit(BACKGROUND, (0,0))
-
-        sprites_passaro.update()
-        sprites_chao.update()
-        #sprites_obstaculo.update()
+        
+        if trigger:
+            sprites_passaro.update()
+            sprites_chao.update()
+            sprites_obstaculo.update()
 
         sprites_passaro.draw(tela_jogo)
         sprites_chao.draw(tela_jogo)
-        #sprites_obstaculo.draw(tela_jogo)
+        sprites_obstaculo.draw(tela_jogo)
 
         if(colidiu_com_chao()):
             game_over()
