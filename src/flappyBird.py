@@ -8,6 +8,13 @@ pg.init()
 def carregar_imagem(caminho):
     return pg.image.load(caminho).convert_alpha()
 
+def colidiu_com_chao():
+    retorno = pg.sprite.groupcollide(sprites_passaro,sprites_chao,False,False)
+    if(retorno == {}):
+        return False
+    else:
+        return True
+
 # Configurações do jogo
 LARGURA = 430
 ALTURA = 800
@@ -23,11 +30,29 @@ pg.display.set_caption('Flappy Bird')
 relogio = pg.time.Clock()
 
 # Imagens
-bg = pg.image.load('src/bg.png')
+bg = pg.image.load('src/imagens/bg.png')
 BACKGROUND = pg.transform.scale(bg, (LARGURA,ALTURA))
-img_asa_baixo = carregar_imagem('src/yellowbird-downflap.png')
-img_asa_meio = carregar_imagem('src/yellowbird-midflap.png')
-img_asa_cima = carregar_imagem('src/yellowbird-upflap.png')
+img_asa_baixo = carregar_imagem('src/imagens/yellowbird-downflap.png')
+img_asa_meio = carregar_imagem('src/imagens/yellowbird-midflap.png')
+img_asa_cima = carregar_imagem('src/imagens/yellowbird-upflap.png')
+img_base = carregar_imagem('src/imagens/base.png')
+img_obstaculo = carregar_imagem('src/imagens/pipe-green.png')
+img_game_over = carregar_imagem('src/imagens/gameover.png')
+
+class Base(pg.sprite.Sprite):
+    def __init__(self, largura, altura):
+        pg.sprite.Sprite.__init__(self)
+
+        self.image = img_base
+        self.image = pg.transform.scale(self.image,(largura,altura))
+        self.rect = self.image.get_rect()
+        self.rect[1] = ALTURA - altura
+
+    def update(self):
+        self.rect[0] -= 10
+
+        if self.rect[0] == -LARGURA:
+            self.rect[0] = 0
 
 class Passaro(pg.sprite.Sprite):
     def __init__(self):
@@ -49,30 +74,71 @@ class Passaro(pg.sprite.Sprite):
         self.image = self.imagens[self.contador]
 
         self.speed += GRAVIDADE
-
         self.rect[1] += self.speed
     
-    def voe(self):
+    def voar(self):
         self.speed = -VELOCIDADE
-        print(self.speed)
+
+class Obstaculo(pg.sprite.Sprite):
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self)
+
+        self.image = img_obstaculo
+        self.rect = self.image.get_rect()
+        self.rect[0] = 430
+
+    def update(self):
+        self.rect[0] -= VELOCIDADE 
 
 sprites_passaro = pg.sprite.Group()
 passaro = Passaro()
 sprites_passaro.add(passaro)
 
-while True:
-    for evento in pg.event.get():
-        if (evento.type == pg.QUIT):
-            pg.quit()
-            sys.exit()
-        if evento.type == pg.KEYDOWN:
-            if evento.key == pg.K_SPACE:
-                passaro.voe()
+sprites_obstaculo = pg.sprite.Group()
+obstaculo = Obstaculo()
+sprites_obstaculo.add(obstaculo)
 
-    tela_jogo.blit(BACKGROUND, (0,0))
+sprites_chao = pg.sprite.Group()
+chao = Base(LARGURA*2, 105)
+sprites_chao.add(chao)
 
-    sprites_passaro.update()
-    sprites_passaro.draw(tela_jogo)
+def loop_principal_jopo():
+    while True:
+        for evento in pg.event.get():
+            if (evento.type == pg.QUIT):
+                pg.quit()
+                sys.exit()
+            if evento.type == pg.KEYDOWN:
+                if evento.key == pg.K_SPACE:
+                    passaro.voar()
 
-    relogio.tick(FPS)
-    pg.display.update()
+        relogio.tick(FPS)
+        tela_jogo.blit(BACKGROUND, (0,0))
+
+        sprites_passaro.update()
+        sprites_chao.update()
+        #sprites_obstaculo.update()
+
+        sprites_passaro.draw(tela_jogo)
+        sprites_chao.draw(tela_jogo)
+        #sprites_obstaculo.draw(tela_jogo)
+
+        if(colidiu_com_chao()):
+            game_over()
+
+        pg.display.update()
+
+def game_over():
+    while True:
+        for evento in pg.event.get():
+            if (evento.type == pg.QUIT):
+                pg.quit()
+                sys.exit()
+            if evento.type == pg.KEYDOWN:
+                if evento.key == pg.K_SPACE:
+                    loop_principal_jopo()
+
+        tela_jogo.blit(img_game_over,(LARGURA/3,ALTURA/3))
+        pg.display.update()
+
+loop_principal_jopo()
