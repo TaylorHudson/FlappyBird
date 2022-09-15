@@ -62,7 +62,11 @@ creditos = carregar_imagem('src/imagens/nomedogrupo.png')
 creditos = pg.transform.scale(creditos, (180,150))
 
 # Áudios
-
+som_pontuacao = pg.mixer.Sound('src/audios/point.wav')
+som_hit = pg.mixer.Sound('src/audios/hit.wav')
+som_voo = pg.mixer.Sound('src/audios/som_voo.wav')
+som_vento = pg.mixer.music.load('src/audios/som_vento.wav')
+som_die = pg.mixer.Sound('src/audios/audio_die.wav')
 
 # Classes dos objetos que interagem no jogo
 class Base(pg.sprite.Sprite):
@@ -167,6 +171,7 @@ def loop_principal_jopo():
                 sys.exit()
             if evento.type == pg.KEYDOWN:
                 if evento.key == pg.K_SPACE and posicao_passaro > 15:
+                    som_voo.play()
                     passaro.voar()
                     trigger = True
 
@@ -183,6 +188,7 @@ def loop_principal_jopo():
             sprites_obstaculo.update()
 
         if pontuou():
+            som_pontuacao.play()
             pontos += 1
             
         sprites_passaro.draw(tela_jogo)
@@ -195,6 +201,8 @@ def loop_principal_jopo():
             tela_jogo.blit(creditos, (250,680))
 
         if(colidiu_com_chao() or colidiu_com_obstaculo()):
+            som_hit.play()
+            som_die.play()
             game_over()
 
         pg.display.update()
