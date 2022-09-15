@@ -1,4 +1,5 @@
 from random import randint
+from select import select
 import pygame as pg
 import sys
 
@@ -16,6 +17,20 @@ def colidiu_com_chao():
     else:
         return True
 
+def colidiu_com_obstaculo():
+    retorno = pg.sprite.groupcollide(sprites_passaro,sprites_obstaculo,False,False)
+    if(retorno == {}):
+        return False
+    else:
+        return True
+
+def pontuou():
+    retorno = pg.sprite.groupcollide(sprites_passaro,sprites_obstaculo_invisivel,False,False)
+    if(retorno == {}):
+        return False
+    else:
+        return True
+
 # Configurações do jogo
 LARGURA = 430
 ALTURA = 800
@@ -23,7 +38,9 @@ FPS = 30
 VELOCIDADE = 10
 GRAVIDADE = 1
 LARGURA_OBSTACULO = 120
-ALTURA_OBSTACULO = 300  
+ALTURA_OBSTACULO = 300
+PONTOS_ATUAIS = 0  
+FONTE = pg.font.SysFont('Pixellari', 45)
 
 # Configurações de tela
 tela_jogo = pg.display.set_mode((LARGURA,ALTURA))
@@ -41,6 +58,9 @@ img_asa_cima = carregar_imagem('src/imagens/yellowbird-upflap.png')
 img_base = carregar_imagem('src/imagens/base.png')
 img_obstaculo = carregar_imagem('src/imagens/pipe-green.png')
 img_game_over = carregar_imagem('src/imagens/gameover.png')
+img_inicial = carregar_imagem('src/imagens/pressioneespaco.png')
+img_inicial = pg.transform.scale(img_inicial,(450,400))
+
 
 class Base(pg.sprite.Sprite):
     def __init__(self, largura, altura):
@@ -110,6 +130,21 @@ class Obstaculo(pg.sprite.Sprite):
             self.altura_obstaculo = tamanho_aleatorio()
             self.rect[0] = LARGURA
 
+class Obstaculo_invisivel(pg.sprite.Sprite):
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self)
+        self.image = img_obstaculo
+        self.image = pg.transform.scale(self.image,(1,95))
+        self.rect = self.image.get_rect()
+        self.rect[1] = 300 
+
+    def update(self):
+        self.rect[0] -= VELOCIDADE
+
+        if(self.rect[0] == -LARGURA):
+            print(self.rect[0])
+            self.rect[0] = LARGURA
+
 sprites_passaro = pg.sprite.Group()
 passaro = Passaro()
 sprites_passaro.add(passaro)
@@ -124,33 +159,58 @@ sprites_chao = pg.sprite.Group()
 chao = Base(LARGURA*2, 105)
 sprites_chao.add(chao)
 
+sprites_obstaculo_invisivel = pg.sprite.Group()
+obstaculo_invisivel = Obstaculo_invisivel()
+sprites_obstaculo_invisivel.add(obstaculo_invisivel)
+
 def loop_principal_jopo():
+    pontos = 0
+    obstaculo_invertido.rect[0] = LARGURA + LARGURA_OBSTACULO
+    obstaculo.rect[0] = LARGURA + LARGURA_OBSTACULO
+    obstaculo.rect[1] = 395
+
     passaro.rect[0] = LARGURA / 2
     passaro.rect[1] = ALTURA / 2
+
+    obstaculo_invisivel.rect[0] = obstaculo_invertido.rect[0] + 120
+    obstaculo_invisivel.rect[1] = obstaculo_invertido.rect[1] + obstaculo_invisivel.rect[1]
+
     trigger = False
     while True:
+        posicao_passaro = passaro.rect[1]
         for evento in pg.event.get():
             if (evento.type == pg.QUIT):
                 pg.quit()
                 sys.exit()
             if evento.type == pg.KEYDOWN:
-                if evento.key == pg.K_SPACE:
+                if evento.key == pg.K_SPACE and posicao_passaro > 15:
                     passaro.voar()
                     trigger = True
 
+        pontuacao = FONTE.render(str(int(pontos)), True, (255,255,255))
+
         relogio.tick(FPS)
         tela_jogo.blit(BACKGROUND, (0,0))
+        tela_jogo.blit(pontuacao, (100,100))
         
         if trigger:
             sprites_passaro.update()
             sprites_chao.update()
             sprites_obstaculo.update()
+            sprites_obstaculo_invisivel.update()
 
+        if not trigger:
+            tela_jogo.blit(img_inicial, (0, 400))
+
+        if pontuou():
+            pontos += 1
+            
         sprites_passaro.draw(tela_jogo)
         sprites_chao.draw(tela_jogo)
         sprites_obstaculo.draw(tela_jogo)
+        sprites_obstaculo_invisivel.draw(tela_jogo)
 
-        if(colidiu_com_chao()):
+        if(colidiu_com_chao() or colidiu_com_obstaculo()):
             game_over()
 
         pg.display.update()
