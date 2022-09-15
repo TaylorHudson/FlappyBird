@@ -6,6 +6,11 @@ import sys
 pg.init()
 pg.mixer.init()
 
+
+def tamanho_aleatorio():
+    altura_aleatoria = randint(300, 600)
+    return altura_aleatoria
+
 # Função para carregar as imagens do jogo
 def carregar_imagem(caminho):
     return pg.image.load(caminho).convert_alpha()
@@ -117,7 +122,7 @@ class Obstaculo(pg.sprite.Sprite):
         self.largura_obstaculo = LARGURA_OBSTACULO
 
         self.image = img_obstaculo
-        self.image = pg.transform.scale(self.image,(self.largura_obstaculo,self.altura_obstaculo))
+        self.image = pg.transform.scale(self.image,(self.largura_obstaculo,500)) #self.altura_obstaculo
         self.rect = self.image.get_rect() 
 
         if (invertido):
@@ -129,7 +134,7 @@ class Obstaculo(pg.sprite.Sprite):
 
     def update(self):
         def tamanho_aleatorio():
-            altura_aleatoria = randint(300,400)
+            altura_aleatoria = randint(300, 400)
             return altura_aleatoria
 
         self.rect[0] -= VELOCIDADE
@@ -157,7 +162,9 @@ def loop_principal_jopo():
     pontos = 0
     obstaculo_invertido.rect[0] = LARGURA + LARGURA_OBSTACULO
     obstaculo.rect[0] = LARGURA + LARGURA_OBSTACULO
-    obstaculo.rect[1] = 395
+
+    obstaculo.rect[1] = tamanho_aleatorio()
+    obstaculo_invertido.rect[1] = obstaculo.rect[1] - 600
 
     passaro.rect[0] = LARGURA / 2
     passaro.rect[1] = ALTURA / 2
